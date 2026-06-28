@@ -120,11 +120,15 @@ def make_tools(query_engine, log: list, sources: list) -> list:
         log.append(f"🔍 Searched documents for: *{query}*")
         response = query_engine.query(query)
         for node in response.source_nodes:
-            sources.append({
-                "file": node.metadata.get("file_name", "Document"),
-                "excerpt": node.text[:400],
-                "score": round(node.score, 3) if node.score else "N/A"
-            })
+            score = node.score if node.score is not None else 1.0
+            # Score is cosine distance: lower = more similar.
+            # Only surface chunks that are genuinely close to the query.
+            if score < 0.45:
+                sources.append({
+                    "file": node.metadata.get("file_name", "Document"),
+                    "excerpt": node.text[:400],
+                    "score": round(score, 3)
+                })
         return str(response)
 
     def web_search(query: str) -> str:
@@ -240,21 +244,19 @@ def build_agent(query_engine, log: list, sources: list) -> ReActAgent:
         llm=Settings.llm,
         verbose=False,
         system_prompt=(
-            "You are a research assistant with these tools:\n"
-            "- document_search: search indexed documents (use FIRST for document questions)\n"
-            "- web_search: search the web for current or external info\n"
-            "- wikipedia_search: look up factual info about topics, people, places\n"
-            "- dictionary_lookup: get word definitions and examples\n"
-            "- summarize: condense long text into bullet points\n"
-            "- translate: translate text to another language\n"
-            "- extract_keywords: find key topics in a piece of text\n"
-            "- calculator: evaluate math expressions\n\n"
-            "Rules:\n"
-            "1. For document questions, ALWAYS use document_search first.\n"
-            "2. If document_search finds the answer, stop — do not also run web_search.\n"
-            "3. For factual/encyclopaedic questions, use wikipedia_search.\n"
-            "4. For current events, use web_search.\n"
-            "5. If nothing is found anywhere, say so honestly."
+            "You are a research assistant. "
+            "STRICT RULE: document_search MUST be your very first tool call for EVERY question — no exceptions. "
+            "If document_search returns a useful answer, STOP. Do not call any other tool. "
+            "Only consider other tools after document_search explicitly returns nothing useful.\n\n"
+            "After document_search finds nothing, follow this priority:\n"
+            "- wikipedia_search: for factual or encyclopaedic questions\n"
+            "- web_search: for current events or very recent information\n"
+            "- dictionary_lookup: ONLY when the user asks for a word definition\n"
+            "- summarize: ONLY when the user explicitly asks to summarize something\n"
+            "- translate: ONLY when the user explicitly asks to translate\n"
+            "- extract_keywords: ONLY when the user explicitly asks for keywords\n"
+            "- calculator: ONLY for math expressions\n\n"
+            "If nothing is found anywhere, say so honestly."
         )
     )
 
