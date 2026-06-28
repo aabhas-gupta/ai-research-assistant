@@ -1,0 +1,15 @@
+Artificial Intelligence Overview
+
+Machine Learning is a subset of AI where systems learn from data to improve their performance without being explicitly programmed. It includes supervised learning, unsupervised learning, and reinforcement learning.
+
+Deep Learning uses neural networks with many layers to learn complex patterns. It powers image recognition, speech recognition, and natural language processing.
+
+Natural Language Processing (NLP) enables computers to understand and generate human language. Applications include translation, sentiment analysis, and chatbots.
+
+Large Language Models (LLMs) are deep learning models trained on massive text datasets. They can generate coherent text, answer questions, write code, and more. Examples include GPT-4, Claude, and Llama.
+
+Retrieval-Augmented Generation (RAG) combines LLMs with a search system. Instead of relying solely on training data, the model retrieves relevant documents at query time and uses them to generate accurate answers.
+
+Vector Databases store data as mathematical vectors (embeddings) and enable similarity search. Unlike regular databases that search by exact match, vector databases find semantically similar content. Examples include ChromaDB, Pinecone, and Weaviate.
+
+AI Agents are autonomous systems that use LLMs to plan and execute multi-step tasks. They can call tools, browse the web, write and run code, and make decisions to achieve a goal.

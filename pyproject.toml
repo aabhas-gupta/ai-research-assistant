@@ -1,0 +1,24 @@
+[project]
+name = "ai-research-assistant"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "beautifulsoup4>=4.15.0",
+    "chromadb>=1.5.9",
+    "docx2txt>=0.9",
+    "fastmcp>=3.4.2",
+    "groq>=1.5.0",
+    "llama-index-core>=0.14.23",
+    "llama-index-embeddings-huggingface>=0.7.0",
+    "llama-index-llms-groq>=0.5.0",
+    "llama-index-vector-stores-chroma>=0.5.5",
+    "pandas>=3.0.3",
+    "pypdf>=6.14.2",
+    "python-dotenv>=1.2.0",
+    "requests>=2.34.2",
+    "sentence-transformers>=5.6.0",
+    "streamlit>=1.58.0",
+    "tavily-python>=0.7.26",
+]
