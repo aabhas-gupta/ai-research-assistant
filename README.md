@@ -11,11 +11,16 @@ Built as a hands-on learning project covering the modern AI stack: LLMs, RAG, ve
 - **Document Q&A** — Upload PDFs, DOCX, CSV, or TXT files and ask natural language questions
 - **Web Ingestion** — Index any webpage by pasting its URL
 - **Persistent Vector Storage** — Documents are embedded and stored in ChromaDB; survives app restarts
-- **AI Agent with Tool Selection** — Autonomously decides whether to search documents, search the web, or calculate
+- **AI Agent with Tool Selection** — Autonomously decides which of 8 tools to use per question
 - **Web Search** — Integrated Tavily search for real-time external information
+- **Wikipedia Search** — Instant factual lookups from Wikipedia
+- **Dictionary Lookup** — Word definitions, pronunciation, and usage examples (no API key needed)
+- **Summarizer** — Condenses any long text into concise bullet points
+- **Translator** — Translates text to any language
+- **Keyword Extractor** — Pulls the top 10 topics from any piece of text
 - **Citations** — Shows which document chunks were used to generate each answer
 - **Agent Reasoning Trace** — Expandable view of every tool the agent called and why
-- **MCP Server** — Exposes tools over the Model Context Protocol for use with Claude Desktop or other MCP clients
+- **MCP Server** — Exposes all tools over the Model Context Protocol for use with Claude Desktop or other MCP clients
 
 ---
 
@@ -29,6 +34,8 @@ Built as a hands-on learning project covering the modern AI stack: LLMs, RAG, ve
 | Embeddings | `BAAI/bge-small-en-v1.5` via HuggingFace (local, free) |
 | Vector Database | [ChromaDB](https://www.trychroma.com) (persistent, local) |
 | Web Search | [Tavily](https://tavily.com) (free tier) |
+| Wikipedia | [wikipedia](https://pypi.org/project/wikipedia/) Python package (free, no key) |
+| Dictionary | [Free Dictionary API](https://dictionaryapi.dev) (free, no key) |
 | MCP Server | [FastMCP](https://github.com/jlowin/fastmcp) |
 | Package Manager | [uv](https://github.com/astral-sh/uv) |
 
@@ -43,10 +50,11 @@ Built as a hands-on learning project covering the modern AI stack: LLMs, RAG, ve
 ├─────────────────────────────────────────────┤
 │         ReActAgent (LlamaIndex 0.14)        │
 │   Decides which tool to use per question    │
-├──────────────────┬──────────────┬───────────┤
-│  document_search │  web_search  │ calculator│
-│  (RAG pipeline)  │  (Tavily)    │ (eval)    │
-├──────────────────┴──────────────┴───────────┤
+├────────────────────────────────────────────────────────────────┤
+│                        8 Tools                                 │
+│  document_search │ web_search  │ wikipedia_search │ calculator │
+│  dictionary_lookup │ summarize │ translate │ extract_keywords  │
+├────────────────────────────────────────────────────────────────┤
 │          ChromaDB  (Persistent Vectors)     │
 │    Chunks · Embeddings · Metadata           │
 ├─────────────────────────────────────────────┤
@@ -148,6 +156,8 @@ uv run python agent.py
 
 ### MCP Server
 
+The MCP server exposes all 8 tools over the Model Context Protocol:
+
 ```bash
 # Run the MCP server
 uv run python mcp_server.py
@@ -157,6 +167,11 @@ uv run fastmcp dev inspector mcp_server.py
 
 # List available tools
 uv run fastmcp list tools mcp_server.py
+
+# Call a tool directly from the terminal
+uv run fastmcp call mcp_server.py wikipedia_search --input '{"query": "Alan Turing"}'
+uv run fastmcp call mcp_server.py dictionary_lookup --input '{"word": "serendipity"}'
+uv run fastmcp call mcp_server.py translate --input '{"text": "Hello world", "target_language": "French"}'
 ```
 
 To connect to Claude Desktop, add this to your `~/Library/Application Support/Claude/claude_desktop_config.json`:
@@ -171,6 +186,21 @@ To connect to Claude Desktop, add this to your `~/Library/Application Support/Cl
   }
 }
 ```
+
+---
+
+## Available Tools
+
+| Tool | Description | Needs API Key? |
+|---|---|---|
+| `document_search` | Searches indexed documents via RAG | No |
+| `web_search` | Live web search via Tavily | Yes (Tavily) |
+| `wikipedia_search` | Fetches Wikipedia summaries | No |
+| `dictionary_lookup` | Word definitions and examples | No |
+| `summarize` | Condenses text into bullet points | No (uses Groq) |
+| `translate` | Translates text to any language | No (uses Groq) |
+| `extract_keywords` | Extracts top 10 topics from text | No (uses Groq) |
+| `calculator` | Evaluates math expressions | No |
 
 ---
 
