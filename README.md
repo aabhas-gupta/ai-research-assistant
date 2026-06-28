@@ -1,8 +1,14 @@
 # AI Research Assistant
 
+<img width="1719" height="863" alt="Screenshot 2026-06-28 at 3 47 35 PM" src="https://github.com/user-attachments/assets/983d3551-83ef-4ccb-b875-7857b2fb7a4b" />
+
+
 A full-stack AI application that lets you upload documents and ask questions about them using Retrieval-Augmented Generation (RAG), an autonomous AI agent, and a conversational web interface.
 
 Built as a hands-on learning project covering the modern AI stack: LLMs, RAG, vector databases, AI agents, MCP, and Streamlit.
+
+<img width="1704" height="876" alt="Screenshot 2026-06-28 at 3 58 51 PM" src="https://github.com/user-attachments/assets/879e13d5-3a04-4f8c-87e4-6bcc43c25a64" />
+
 
 ---
 
