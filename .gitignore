@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environment
+.venv
+
+# Secrets — never commit these
+.env
+
+# Local vector database (generated at runtime)
+chroma_db/
+
+# Local state file (generated at runtime)
+indexed_sources.json
+
+# macOS
+.DS_Store
