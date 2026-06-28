@@ -147,13 +147,91 @@ def make_tools(query_engine, log: list, sources: list) -> list:
         except Exception as e:
             return f"Error: {e}"
 
+    def wikipedia_search(query: str) -> str:
+        """Search Wikipedia for factual information about a topic, person, place, or concept."""
+        import wikipedia
+        log.append(f"📖 Wikipedia search: *{query}*")
+        try:
+            results = wikipedia.search(query, results=3)
+            if not results:
+                return f"No Wikipedia articles found for '{query}'"
+            summary = wikipedia.summary(results[0], sentences=5, auto_suggest=False)
+            return f"**{results[0]}** (Wikipedia)\n\n{summary}"
+        except wikipedia.exceptions.DisambiguationError as e:
+            try:
+                summary = wikipedia.summary(e.options[0], sentences=5, auto_suggest=False)
+                return f"**{e.options[0]}** (Wikipedia)\n\n{summary}"
+            except Exception:
+                return f"Multiple matches found. Did you mean: {', '.join(e.options[:5])}?"
+        except Exception as e:
+            return f"Wikipedia error: {str(e)}"
+
+    def dictionary_lookup(word: str) -> str:
+        """Look up the definition, pronunciation, and usage examples for a word."""
+        import requests
+        log.append(f"📚 Dictionary lookup: *{word}*")
+        url = f"https://api.dictionaryapi.dev/api/v2/entries/en/{word.strip().lower()}"
+        try:
+            resp = requests.get(url, timeout=10)
+            if resp.status_code != 200:
+                return f"No definition found for '{word}'"
+            data = resp.json()[0]
+            lines = [f"**{data['word']}**"]
+            if data.get("phonetic"):
+                lines.append(f"Pronunciation: {data['phonetic']}")
+            for meaning in data.get("meanings", [])[:2]:
+                lines.append(f"\n*{meaning['partOfSpeech']}*")
+                for defn in meaning.get("definitions", [])[:2]:
+                    lines.append(f"• {defn['definition']}")
+                    if defn.get("example"):
+                        lines.append(f'  e.g. "{defn["example"]}"')
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Dictionary error: {str(e)}"
+
+    def summarize(text: str) -> str:
+        """Summarize a long piece of text into concise bullet points."""
+        log.append(f"✍️ Summarizing text ({len(text.split())} words)...")
+        response = Settings.llm.complete(
+            f"Summarize the following text into 5 clear, concise bullet points:\n\n{text}"
+        )
+        return str(response)
+
+    def translate(text: str, target_language: str) -> str:
+        """Translate text into another language. Provide the text and the target language name."""
+        log.append(f"🌍 Translating to *{target_language}*...")
+        response = Settings.llm.complete(
+            f"Translate the following text to {target_language}. "
+            f"Only return the translated text, nothing else:\n\n{text}"
+        )
+        return str(response)
+
+    def extract_keywords(text: str) -> str:
+        """Extract the main keywords and key topics from a piece of text."""
+        log.append(f"🔑 Extracting keywords from text ({len(text.split())} words)...")
+        response = Settings.llm.complete(
+            f"Extract the 10 most important keywords and topics from the following text. "
+            f"Return them as a numbered list, each with a one-line explanation:\n\n{text}"
+        )
+        return str(response)
+
     return [
         FunctionTool.from_defaults(fn=search_documents, name="document_search",
-            description="Search indexed documents. Use for questions about uploaded files or URLs."),
+            description="Search indexed documents. Use FIRST for any question about uploaded files or URLs."),
         FunctionTool.from_defaults(fn=web_search, name="web_search",
             description="Search the web for current events or info not in documents."),
+        FunctionTool.from_defaults(fn=wikipedia_search, name="wikipedia_search",
+            description="Search Wikipedia for factual info about topics, people, places, or concepts."),
+        FunctionTool.from_defaults(fn=dictionary_lookup, name="dictionary_lookup",
+            description="Look up a word's definition, pronunciation, and usage examples."),
+        FunctionTool.from_defaults(fn=summarize, name="summarize",
+            description="Summarize a long piece of text into bullet points."),
+        FunctionTool.from_defaults(fn=translate, name="translate",
+            description="Translate text into another language. Needs the text and target language name."),
+        FunctionTool.from_defaults(fn=extract_keywords, name="extract_keywords",
+            description="Extract the main keywords and topics from a piece of text."),
         FunctionTool.from_defaults(fn=calculate, name="calculator",
-            description="Evaluate math expressions."),
+            description="Evaluate math expressions like '15 * 47'."),
     ]
 
 def build_agent(query_engine, log: list, sources: list) -> ReActAgent:
@@ -162,12 +240,20 @@ def build_agent(query_engine, log: list, sources: list) -> ReActAgent:
         llm=Settings.llm,
         verbose=False,
         system_prompt=(
-            "You are a research assistant. Follow these rules strictly:\n"
-            "1. ALWAYS use document_search first for ANY question.\n"
-            "2. Only use web_search if document_search returns no useful answer "
-            "AND the user explicitly asks about current events or external information.\n"
-            "3. Use calculator only for math expressions.\n"
-            "4. If document_search finds the answer, stop — do NOT also run web_search.\n"
+            "You are a research assistant with these tools:\n"
+            "- document_search: search indexed documents (use FIRST for document questions)\n"
+            "- web_search: search the web for current or external info\n"
+            "- wikipedia_search: look up factual info about topics, people, places\n"
+            "- dictionary_lookup: get word definitions and examples\n"
+            "- summarize: condense long text into bullet points\n"
+            "- translate: translate text to another language\n"
+            "- extract_keywords: find key topics in a piece of text\n"
+            "- calculator: evaluate math expressions\n\n"
+            "Rules:\n"
+            "1. For document questions, ALWAYS use document_search first.\n"
+            "2. If document_search finds the answer, stop — do not also run web_search.\n"
+            "3. For factual/encyclopaedic questions, use wikipedia_search.\n"
+            "4. For current events, use web_search.\n"
             "5. If nothing is found anywhere, say so honestly."
         )
     )
